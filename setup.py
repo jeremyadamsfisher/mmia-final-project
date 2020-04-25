@@ -4,5 +4,5 @@ setup(
     name='MMIA Final Project Submission',
     author='Jeremy Fisher',
     packages=find_packages(),
-    entry_points={"console_scripts": ['skeleregister = main:main']},
+    entry_points={"console_scripts": ['skeleregister = skeleregister.main:main']},
 )

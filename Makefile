@@ -1,7 +1,15 @@
-PY=/Users/jeremyfisher/miniconda3/envs/mmiafinal/bin/python
+DOCKER_IMG="jeremy-mmia-final-project"
+IMG_DIR=
 
-run:
-	$(PY) demonstrate_registration_feet.py
+docker:
+	docker build -t $(DOCKER_IMG) .
 
-clean:
-	rm ./out/*
+poke: docker
+	docker run --rm -ti $(DOCKER_IMG) \
+		--outdir ./out \
+		"UAB007-LF.jpg" \
+		"UAB006-RF.jpg" \
+		"UAB012-LH.jpg" \
+		"UAB013-RH.jpg" \
+		/radiographs \
+
