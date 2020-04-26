@@ -1,16 +1,39 @@
+import typing as t
 import SimpleITK as sitk
+from skimage import io, color, util, transform
+
 
 # define registration using SimpleITKs OOP interface
 r = sitk.ImageRegistrationMethod()
-r.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)
+r.SetMetricAsMattesMutualInformation(numberOfHistogramBins=150)
 r.SetMetricSamplingStrategy(r.RANDOM)
-r.SetMetricSamplingPercentage(0.1)
+r.SetMetricSamplingPercentage(0.125)
 r.SetInterpolator(sitk.sitkLinear)
 r.SetOptimizerAsGradientDescent(learningRate=0.25, numberOfIterations=250)
 r.SetOptimizerScalesFromPhysicalShift()
-r.SetShrinkFactorsPerLevel(shrinkFactors=[4,2,1])
+r.SetShrinkFactorsPerLevel(shrinkFactors=[8,2,1])
 r.SetSmoothingSigmasPerLevel(smoothingSigmas=[2,1,0])
 r.SmoothingSigmasAreSpecifiedInPhysicalUnitsOff()
+
+
+def load_and_preprocess_img(fp, im_size=(1024, 1024)) -> t.Tuple[sitk.Image, int, str]:
+    """load the radiograph into memory and resize to a square
+    to be amenable to downstream registration and learning and stuff"""
+    im_orig = io.imread(fp)
+    im = color.rgb2gray(im_orig)
+    width, height = im.shape
+    padding = (width - height) // 2
+    padding_mode = "no_padding"
+    if padding != 0:
+        im = util.pad(im, padding, mode="edge")
+        if height < width:
+            im = im[padding:width+padding,:]
+            padding_mode = "top_bottom_padding"
+        else:
+            im = im[:,padding:height+padding]
+            padding_mode = "left_right_padding"
+    im = transform.resize(im, im_size, anti_aliasing=True)
+    return sitk.GetImageFromArray(im), im_orig, padding, padding_mode
 
 
 def threshold(radiograph: sitk.Image) -> sitk.Image:
@@ -25,9 +48,12 @@ def threshold(radiograph: sitk.Image) -> sitk.Image:
     return seg
 
 
-def register(radiograph: sitk.Image,
+def register(radiograph_fp,
              prototypical_radiograph: sitk.Image,
-             n_registrations=3) -> sitk.Image:
+             n_registrations=3):
+
+    radiograph, radiograph_orig, *preprocessing_details = load_and_preprocess_img(radiograph_fp)
+
     fixed_image = sitk.Cast(sitk.RescaleIntensity(threshold(prototypical_radiograph)), sitk.sitkFloat32)
     moving_image = sitk.Cast(sitk.RescaleIntensity(threshold(radiograph)), sitk.sitkFloat32)
     initial_transform = sitk.CenteredTransformInitializer(
@@ -39,16 +65,18 @@ def register(radiograph: sitk.Image,
     r.SetInitialTransform(initial_transform, inPlace=False)
     registrations = []
     for _ in range(n_registrations):
-        transform = r.Execute(fixed_image, moving_image)
+        transforme_proposed = r.Execute(fixed_image, moving_image)
         quality = r.GetMetricValue()
-        registrations.append((transform, quality))
-    final_transform, _ = min(registrations, key=lambda x: x[1])
+        registrations.append((transforme_proposed, quality))
+    transform_final, _ = min(registrations, key=lambda x: x[1])
+    rotation, *_ = transform_final.GetParameters()
+    transform_final.SetParameters((rotation, 0, 0))  # discard translation
     radiograph_registered = sitk.Resample(
         radiograph,
         prototypical_radiograph,
-        transform,
+        transform_final,
         sitk.sitkLinear,
         0.0,
         radiograph.GetPixelID()
     )
-    return radiograph_registered
+    return (radiograph_orig, radiograph_registered, rotation, *preprocessing_details)

@@ -22,7 +22,7 @@ def cli() -> dict:
         opts["radiograph_fps"] = list(img_args[0].glob("*.jpg"))
     else:  # list of images
         opts["radiograph_fps"] = img_args
-    n_radiographs = len(opts["image_fps"])
+    n_radiographs = len(opts["radiograph_fps"])
     if n_radiographs == 0:
         parser.error("No radiographs found!")
     return opts

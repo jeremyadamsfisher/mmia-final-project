@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     entry_points={"console_scripts": ['skeleregister = skeleregister.main:main']},
     include_package_data=True,
-    package_data={"templates": [
+    package_data={"prototypical_appendages": [
         "UAB006-RF.jpg",
         "UAB007-LF.jpg",
         "UAB012-LH.jpg",

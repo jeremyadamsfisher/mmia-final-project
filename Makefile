@@ -7,8 +7,7 @@ docker:
 poke: docker
 	docker run \
 		--rm \
-		--mount type=bind,source=$(IMG_DIR),target=/radiographs,readonly \
+		--mount type=bind,source=$(IMG_DIR),target=/radiographs \
 		--mount type=bind,source=$(PWD)/out,target=/out \
 		-ti $(DOCKER_IMG) \
 		skeleregister --outdir ./out ./radiographs
-
