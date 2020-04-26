@@ -16,7 +16,6 @@ def comparison(radiograph_original: np.ndarray,
     ax0.imshow(radiograph_original, cmap="Greys_r")
     ax0.set(title="Original")
     ax1.imshow(sitk.GetArrayFromImage(radiograph_registered), cmap="Greys_r")
-    ax1.set(title="Registered/Resampled")
-    fig.suptitle(title)
+    ax1.set(title=f"Registered/Resampled ({title})")
     plt.savefig(outfp)
     plt.close()

@@ -22,7 +22,7 @@ def load_and_preprocess_img(fp, im_size=(1024, 1024)) -> t.Tuple[sitk.Image, int
     im_orig = io.imread(fp)
     im = color.rgb2gray(im_orig)
     width, height = im.shape
-    padding = (width - height) // 2
+    padding = abs(width - height) // 2
     padding_mode = "no_padding"
     if padding != 0:
         im = util.pad(im, padding, mode="edge")

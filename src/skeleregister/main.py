@@ -37,12 +37,11 @@ def register_radiographs(radiograph_fps, outdir):
                              f"to be formatted correctly!")
         radiograph_original, radiograph_registered, rotation, padding, padding_mode = \
             register(radiograph_fp, prototypical[appendage], n_registrations=1)
-
         save_img(radiograph_registered, str(registration_result_dir/radiograph_fp.name))
         comparison(
             radiograph_original,
             radiograph_registered,
-            title=f"Registration Comparing {rotation:.2f} rads, {padding*2} pixels padding",
+            title=f"{rotation:.2f} rads, {padding*2} pixels padding",
             outfp=visual_inspection_dir/(radiograph_fp.stem + "_comparison.png"),
         )
 
