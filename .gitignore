@@ -140,3 +140,4 @@ dmypy.json
 .ipynb_checkpoints
 .idea
 out
+data
