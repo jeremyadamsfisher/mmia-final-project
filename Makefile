@@ -1,15 +1,14 @@
-DOCKER_IMG="jeremy-mmia-final-project"
-IMG_DIR=
+DOCKER_IMG=jeremy-mmia-final-project
+IMG_DIR=/Users/jeremyfisher/ra2challenge/data/raw/images
 
 docker:
 	docker build -t $(DOCKER_IMG) .
 
 poke: docker
-	docker run --rm -ti $(DOCKER_IMG) \
-		--outdir ./out \
-		"UAB007-LF.jpg" \
-		"UAB006-RF.jpg" \
-		"UAB012-LH.jpg" \
-		"UAB013-RH.jpg" \
-		/radiographs \
+	docker run \
+		--rm \
+		--mount type=bind,source=$(IMG_DIR),target=/radiographs,readonly \
+		--mount type=bind,source=$(PWD)/out,target=/out \
+		-ti $(DOCKER_IMG) \
+		skeleregister --outdir ./out ./radiographs
 

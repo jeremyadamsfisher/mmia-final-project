@@ -7,4 +7,5 @@ COPY setup.py src ./
 RUN python setup.py install \
 	&& cd // \
 	&& rm -rf ./app
-CMD /bin/bash
+WORKDIR /
+RUN mkdir /radiographs && mkdir /out
