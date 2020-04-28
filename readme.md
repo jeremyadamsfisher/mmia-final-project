@@ -15,11 +15,13 @@ My recommendation is to use Docker, as this should build regardless of operating
 ```bash
 make demonstration
 ```
-This will build the docker image, set up a container with the correct bindings and run the algorithm on the RA2 dataset, depositing the results in a folder,`out`.
+This will build the docker image, set up a container with the correct bindings and run the algorithm on the RA2 dataset, depositing the results in a folder, `out`.
 
-However, because this is a python package, it is simple to install locally:
+However, because this is a python package, it is simple to install in a conda enviornment:
 
 ```bash
+conda create -n jeremy-mimia-final-project python=3.7
+conda activate jeremy-mimia-final-project
 pip install -r requirements.txt
 python setup.py install
 ```
@@ -30,4 +32,3 @@ mkdir out && skeleregister --outdir ./out ./data
 ```
 
 In either case, the program produced preprocessed and registered imaged as well as comparisons of those images to the original in the `out/registered` and `out/comparison` folders respectively.
-

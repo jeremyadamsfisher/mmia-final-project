@@ -22,18 +22,19 @@ def load_and_preprocess_img(fp, im_size=(1024, 1024)) -> t.Tuple[sitk.Image, int
     im_orig = io.imread(fp)
     im = color.rgb2gray(im_orig)
     width, height = im.shape
-    padding = abs(width - height) // 2
-    padding_mode = "no_padding"
-    if padding != 0:
-        im = util.pad(im, padding, mode="edge")
-        if height < width:
-            im = im[padding:width+padding,:]
-            padding_mode = "top_bottom_padding"
+
+    padding_left = padding_top = 0
+    if width != height:
+        padding = abs(width - height) // 2
+        im = util.pad(im,  padding, mode="edge")  # pad in all directions...
+        if width < height:
+            padding_left = padding
+            im = im[:, padding:height+padding]  # ...then crop
         else:
-            im = im[:,padding:height+padding]
-            padding_mode = "left_right_padding"
+            padding_top = padding
+            im = im[padding:width+padding, :]
     im = transform.resize(im, im_size, anti_aliasing=True)
-    return sitk.GetImageFromArray(im), im_orig, padding, padding_mode
+    return sitk.GetImageFromArray(im), im_orig, padding_left, padding_top
 
 
 def threshold(radiograph: sitk.Image) -> sitk.Image:
@@ -52,7 +53,8 @@ def register(radiograph_fp,
              prototypical_radiograph: sitk.Image,
              n_registrations=3):
 
-    radiograph, radiograph_orig, *preprocessing_details = load_and_preprocess_img(radiograph_fp)
+    radiograph, radiograph_orig, padding_left, padding_top = \
+        load_and_preprocess_img(radiograph_fp)
 
     fixed_image = sitk.Cast(sitk.RescaleIntensity(threshold(prototypical_radiograph)), sitk.sitkFloat32)
     moving_image = sitk.Cast(sitk.RescaleIntensity(threshold(radiograph)), sitk.sitkFloat32)
@@ -68,7 +70,7 @@ def register(radiograph_fp,
         transforme_proposed = r.Execute(fixed_image, moving_image)
         quality = r.GetMetricValue()
         registrations.append((transforme_proposed, quality))
-    transform_final, _ = min(registrations, key=lambda x: x[1])
+    transform_final, transform_quality = min(registrations, key=lambda x: x[1])
     rotation, *_ = transform_final.GetParameters()
     transform_final.SetParameters((rotation, 0, 0))  # discard translation
     radiograph_registered = sitk.Resample(
@@ -79,4 +81,5 @@ def register(radiograph_fp,
         0.0,
         radiograph.GetPixelID()
     )
-    return (radiograph_orig, radiograph_registered, rotation, *preprocessing_details)
+    return (radiograph_orig, radiograph_registered, rotation,
+            padding_left, padding_top, transform_quality)
