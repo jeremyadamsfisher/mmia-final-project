@@ -1,5 +1,6 @@
 DOCKER_IMG=jeremy-mmia-final-project
-IMG_DIR=$(PWD)/data
+IMG_DIR=$(shell pwd)/data
+OUT_DIR=$(shell pwd)/out
 
 default: demonstrate
 
@@ -8,7 +9,7 @@ run:
 	docker run \
 		--rm \
 		--mount type=bind,source=$(IMG_DIR),target=/data \
-		--mount type=bind,source=$(PWD)/out,target=/out \
+		--mount type=bind,source=$(OUT_DIR),target=/out \
 		-ti $(DOCKER_IMG) \
 		skeleregister --outdir ./out ./data
 
