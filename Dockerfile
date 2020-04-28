@@ -8,4 +8,4 @@ RUN python setup.py install \
 	&& cd // \
 	&& rm -rf ./app
 WORKDIR /
-RUN mkdir /radiographs && mkdir /out
+RUN mkdir /data && mkdir /out

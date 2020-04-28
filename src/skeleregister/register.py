@@ -48,8 +48,16 @@ def threshold(radiograph: sitk.Image) -> sitk.Image:
     seg = sitk.BinaryErode(seg, 10)
     return seg
 
+def register(*args, **kwargs):
+    for _ in range(5):
+        try:
+            return __register(*args, **kwargs)
+        except RuntimeError:
+            pass  # fail-safe against mutual information bug
+    raise RuntimeError("Number of retries exceeded!")
 
-def register(radiograph_fp,
+
+def __register(radiograph_fp,
              prototypical_radiograph: sitk.Image,
              n_registrations=3):
 

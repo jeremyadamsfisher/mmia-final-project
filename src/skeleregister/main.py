@@ -18,9 +18,9 @@ def register_radiographs(radiograph_fps, outdir):
         radiograph_fps: list of ragiographs to register
         outdir: where to output the per-radiograph analysis
     """
-    visual_inspection_dir = outdir/"comparison"
+    visual_inspection_dir   = outdir/"comparison"
     registration_result_dir = outdir/"registered"
-    analysis_out_fp = outdir/"registration_results.json"
+    analysis_out_fp         = outdir/"registration_results.json"
     for dir in [visual_inspection_dir, registration_result_dir]:
         dir.mkdir(exist_ok=True)
     visual_inspection_dir.mkdir(exist_ok=True)
@@ -32,38 +32,34 @@ def register_radiographs(radiograph_fps, outdir):
         with ilr.path(prototypical_appendages, f_name) as template_fp:
             prototypical[appendage], *_ = load_and_preprocess_img(template_fp)
     results = []
-    for radiograph_fp in tqdm(radiograph_fps, unit="radiographs"):
+    for radiograph_fp in tqdm(radiograph_fps, unit="radiograph"):
         match = re.search(r"-([L|R][H|F]).jpg$", radiograph_fp.name)
         try:
-            appendage, = match.groups()
+            appendage_indicated, = match.groups()
         except AttributeError:
             raise ValueError(f"filename `{radiograph_fp.name}` does not seem"
                              f"to be formatted correctly!")
-        while True:
-            try:
-                radiograph_original, radiograph_registered, rotation, \
-                    padding_left, padding_top, transform_quality \
-                    = register(radiograph_fp, prototypical[appendage], n_registrations=1)
-            except RuntimeError:
-                pass  # fail-safe against mutual information bug
-            else:
-                break
-        save_img(radiograph_registered, str(registration_result_dir/radiograph_fp.name))
-        comparison(
-            radiograph_original,
-            radiograph_registered,
-            title=f"{rotation:.2f} rads, {max((padding_left, padding_top))*2} pixels padding",
-            outfp=visual_inspection_dir/(radiograph_fp.stem + "_comparison.png"),
-        )
-        results.append({
-            "appendage": appendage,
-            "fname": radiograph_fp.name,
-            "rotation": rotation,
-            "padding_top": padding_top,
-            "padding_left": padding_left,
-            "transform_quality": transform_quality,
-        })
-
+        for appendage_template in ["RF", "LF", "RH", "LH"]:
+            radiograph_original, radiograph_registered, rotation, \
+                padding_left, padding_top, transform_quality \
+                = register(radiograph_fp, prototypical[appendage_template], n_registrations=1)
+            results.append({
+                "appendage_indicated": appendage_indicated,
+                "appendage_template": appendage_template,
+                "fname": radiograph_fp.name,
+                "rotation": rotation,
+                "padding_top": padding_top,
+                "padding_left": padding_left,
+                "transform_quality": transform_quality,
+            })
+            if appendage_indicated == appendage_template:
+                save_img(radiograph_registered, str(registration_result_dir/radiograph_fp.name))
+                comparison(
+                    radiograph_original,
+                    radiograph_registered,
+                    title=f"{rotation:.2f} rads, {max((padding_left, padding_top))*2} pixels padding",
+                    outfp=visual_inspection_dir/(radiograph_fp.stem + "_comparison.png"),
+                )
     with analysis_out_fp.open("wt") as f:
         json.dump(results, f)
 
